@@ -1,0 +1,3 @@
+[console_scripts]
+bridge-sync = bridge_sync.cli:main
+

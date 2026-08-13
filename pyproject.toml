@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bridge-md-notion"
+version = "0.1.0"
+description = "Sincronizador determinista Obsidian Markdown ↔ Notion en Python stdlib"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+bridge-sync = "bridge_sync.cli:main"
