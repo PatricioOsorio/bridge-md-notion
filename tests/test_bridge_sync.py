@@ -45,6 +45,19 @@ class TestBridgeSync(unittest.TestCase):
         lm = LinkMap(pages)
         self.assertEqual(lm.name_for_id("3a30b31fce98801dbdf9d153cf7c2f34"), "semana-01")
 
+    def test_split_wikilink_strips_heading_anchor(self):
+        from bridge_sync.links import split_wikilink
+
+        self.assertEqual(split_wikilink("calentamiento"), ("calentamiento", "calentamiento"))
+        self.assertEqual(
+            split_wikilink("calentamiento#🅿️ Push (Lunes / Viernes)"),
+            ("calentamiento", "calentamiento"),
+        )
+        self.assertEqual(
+            split_wikilink("calentamiento#Push|ver calentamiento"),
+            ("calentamiento", "ver calentamiento"),
+        )
+
     def test_frontmatter_regex(self):
         from bridge_sync.markdown import FRONTMATTER_RE
         text1 = "---\ntags:\n  - gym\n---\n\n# Body"

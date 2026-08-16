@@ -47,7 +47,14 @@ def to_wikilink(target, text=None):
 
 
 def split_wikilink(inner):
-    """"name|texto" -> ("name", "texto"); "name" -> ("name", "name")."""
+    """"name|texto" -> ("name", "texto"); "name" -> ("name", "name").
+
+    Obsidian heading anchors ("name#heading") are stripped from the lookup
+    target — Notion has no equivalent of linking to a heading by its text,
+    only by block id, which this bridge doesn't resolve. The link still
+    reaches the right page, just not the specific section.
+    """
     target, sep, alias = inner.partition("|")
     target = target.strip()
+    target, _, _anchor = target.partition("#")
     return target, (alias.strip() if sep else target)
