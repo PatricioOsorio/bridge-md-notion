@@ -44,6 +44,16 @@ class TestBridgeSync(unittest.TestCase):
         pages = {"semana-01": {"id": "3a30b31fce98801dbdf9d153cf7c2f34", "path": "logs/semana-01.md"}}
         lm = LinkMap(pages)
         self.assertEqual(lm.name_for_id("3a30b31fce98801dbdf9d153cf7c2f34"), "semana-01")
+
+    def test_frontmatter_regex(self):
+        from bridge_sync.markdown import FRONTMATTER_RE
+        text1 = "---\ntags:\n  - gym\n---\n\n# Body"
+        text2 = "---\ntags:\n  - gym\n---\n# Body"
+        text3 = "---\ntags:\n  - gym\n---   \n# Body"
+        self.assertEqual(FRONTMATTER_RE.sub("", text1), "# Body")
+        self.assertEqual(FRONTMATTER_RE.sub("", text2), "# Body")
+        self.assertEqual(FRONTMATTER_RE.sub("", text3), "# Body")
+
     def test_check_integrity(self):
         import tempfile
         from pathlib import Path

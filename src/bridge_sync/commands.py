@@ -48,7 +48,7 @@ def pull(name, page):
     if local_path.exists():
         m = md.FRONTMATTER_RE.match(local_path.read_text())
         if m:
-            frontmatter = m.group(0)
+            frontmatter = m.group(0).rstrip("\n") + "\n\n"
 
     try:
         page_obj = notion.get_page(page["id"])
@@ -58,7 +58,7 @@ def pull(name, page):
                 if re.search(r"^icon:", frontmatter, re.MULTILINE):
                     frontmatter = re.sub(r"^icon:.*$", f'icon: "{icon}"', frontmatter, flags=re.MULTILINE)
                 else:
-                    frontmatter = frontmatter.replace("---\n\n", f'icon: "{icon}"\n---\n\n')
+                    frontmatter = re.sub(r"\n---\s*$", f'\nicon: "{icon}"\n---', frontmatter.strip()) + "\n\n"
             else:
                 frontmatter = f'---\nicon: "{icon}"\n---\n\n'
     except Exception:

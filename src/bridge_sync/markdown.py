@@ -4,7 +4,7 @@ import sys
 
 from . import links as lk
 
-FRONTMATTER_RE = re.compile(r"^---\n.*?\n---\n\n", re.DOTALL)
+FRONTMATTER_RE = re.compile(r"^---\r?\n.*?\r?\n---\s*(?:\n|$)", re.DOTALL)
 
 # ---------- Notion blocks -> markdown (pull) ----------
 
