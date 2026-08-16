@@ -65,6 +65,14 @@ def set_page_icon(page_id, icon):
     return api_request("PATCH", f"/pages/{page_id}", {"icon": {"type": "emoji", "emoji": icon}})
 
 
+def set_page_title(page_id, title):
+    """Set the Title property of an existing page."""
+    return api_request(
+        "PATCH", f"/pages/{page_id}",
+        {"properties": {"title": {"title": [{"text": {"content": title}}]}}},
+    )
+
+
 def get_page(page_id):
     return api_request("GET", f"/pages/{page_id}")
 

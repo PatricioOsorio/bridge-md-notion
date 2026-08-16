@@ -58,6 +58,14 @@ class TestBridgeSync(unittest.TestCase):
             ("calentamiento", "ver calentamiento"),
         )
 
+    def test_first_h1_title_strips_leading_emoji(self):
+        from bridge_sync.markdown import first_h1_title
+
+        self.assertEqual(first_h1_title("# 🏋️ Training\n\nBody"), "Training")
+        self.assertEqual(first_h1_title("# Mesociclo 3 — Hipertrofia\n"), "Mesociclo 3 — Hipertrofia")
+        self.assertIsNone(first_h1_title("No heading here, just text."))
+        self.assertIsNone(first_h1_title("## Not an H1\n\nBody"))
+
     def test_frontmatter_regex(self):
         from bridge_sync.markdown import FRONTMATTER_RE
         text1 = "---\ntags:\n  - gym\n---\n\n# Body"

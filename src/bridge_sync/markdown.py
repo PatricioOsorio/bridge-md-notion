@@ -6,6 +6,24 @@ from . import links as lk
 
 FRONTMATTER_RE = re.compile(r"^---\r?\n.*?\r?\n---\s*(?:\n|$)", re.DOTALL)
 
+_H1_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
+# Leading emoji (+ variation selector / ZWJ) on a heading — the page's Notion
+# icon already carries it, so the synced title stays plain text.
+_LEADING_EMOJI_RE = re.compile(r"^[\U0001F000-\U0001FFFF☀-➿️‍]+\s*")
+
+
+def first_h1_title(body):
+    """First ATX H1 in `body` (frontmatter already stripped), emoji-stripped.
+
+    None if the document has no H1 — callers should leave the Notion page
+    title untouched in that case rather than clearing it.
+    """
+    m = _H1_RE.search(body)
+    if not m:
+        return None
+    title = _LEADING_EMOJI_RE.sub("", m.group(1)).strip()
+    return title or None
+
 # ---------- Notion blocks -> markdown (pull) ----------
 
 

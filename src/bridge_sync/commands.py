@@ -112,6 +112,13 @@ def push(name, page):
         except Exception:
             pass
 
+    title = md.first_h1_title(body)
+    if title:
+        try:
+            notion.set_page_title(page["id"], title)
+        except Exception:
+            pass
+
     existing, current_md = _page_to_md(page["id"])
     backup_dir = _get_backup_dir()
     backup_dir.mkdir(exist_ok=True)
