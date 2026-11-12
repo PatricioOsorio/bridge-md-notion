@@ -237,6 +237,22 @@ def create(name, title, parent_id, rel_path):
     print(f"  uploaded {rel_path} ({len(blocks)} blocks)")
 
 
+_FRONTMATTER_BLOCK_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
+_CLOSED_STATUS_RE = re.compile(r"^status:\s*cerrado\b", re.MULTILINE)
+_UNESCAPED_TABLE_WIKI_PIPE_RE = re.compile(r"\[\[[^\]|]*(?<!\\)\|[^\]]*\]\]")
+
+
+def _unescaped_table_wikilink_lines(text):
+    fm = _FRONTMATTER_BLOCK_RE.match(text)
+    if fm and _CLOSED_STATUS_RE.search(fm.group(1)):
+        return []
+    return [
+        i
+        for i, line in enumerate(text.splitlines(), 1)
+        if line.lstrip().startswith("|") and _UNESCAPED_TABLE_WIKI_PIPE_RE.search(line)
+    ]
+
+
 def check():
     """Verify integrity of local project workspace and notion_pages.json map."""
     from pathlib import Path
@@ -256,6 +272,13 @@ def check():
         local_file = root / page["path"]
         if not local_file.exists():
             errors.append(f"Page '{name}' -> {page['path']} does not exist on disk")
+        else:
+            bad_lines = _unescaped_table_wikilink_lines(local_file.read_text(encoding="utf-8"))
+            if bad_lines:
+                lines_preview = ", ".join(str(n) for n in bad_lines[:5])
+                errors.append(
+                    f"Page '{name}' ({page['path']}) has unescaped wikilink pipe in table row(s): {lines_preview}"
+                )
 
         stem = Path(page["path"]).stem
         if name != stem:

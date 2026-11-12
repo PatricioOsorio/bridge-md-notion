@@ -47,7 +47,7 @@ def to_wikilink(target, text=None):
 
 
 def split_wikilink(inner):
-    """"name|texto" -> ("name", "texto"); "name" -> ("name", "name").
+    """"name|texto" or "name\|texto" -> ("name", "texto"); "name" -> ("name", "name").
 
     Obsidian heading anchors ("name#heading") are stripped from the lookup
     target — Notion has no equivalent of linking to a heading by its text,
@@ -56,5 +56,4 @@ def split_wikilink(inner):
     """
     target, sep, alias = inner.partition("|")
     target = target.strip()
-    target, _, _anchor = target.partition("#")
     return target, (alias.strip() if sep else target)

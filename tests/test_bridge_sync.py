@@ -40,6 +40,89 @@ class TestBridgeSync(unittest.TestCase):
         self.assertEqual(table["table_width"], 2)
         self.assertEqual(len(table["children"]), 2)
 
+    def test_md_to_blocks_table_with_wikilink(self):
+        text = (
+            "| # | Ejercicio | Rol |\n"
+            "| --- | --- | --- |\n"
+            "| 1 | [[jalon-agarre-v|Jalón Agarre V]]<br>_cue_ | Top |\n"
+        )
+        blocks = md_to_blocks(text)
+        table = blocks[0]["table"]
+        self.assertEqual(table["table_width"], 3)
+        self.assertEqual(len(table["children"][1]["table_row"]["cells"]), 3)
+
+    def test_blocks_to_md_escapes_table_wikilink_pipe_and_roundtrips(self):
+        pages = {"jalon-agarre-v": {"id": "3a30b31fce98801dbdf9d153cf7c2f34", "path": "ejercicios/jalon-agarre-v.md"}}
+        lm = LinkMap(pages)
+        blocks = [
+            {
+                "type": "table",
+                "id": "tbl1",
+                "table": {"table_width": 2},
+            }
+        ]
+        children = {
+            "tbl1": [
+                {
+                    "type": "table_row",
+                    "table_row": {
+                        "cells": [
+                            [{"plain_text": "Ejercicio", "annotations": {}, "href": None}],
+                            [{"plain_text": "Rol", "annotations": {}, "href": None}],
+                        ]
+                    },
+                },
+                {
+                    "type": "table_row",
+                    "table_row": {
+                        "cells": [
+                            [
+                                {"plain_text": "Jalón ", "annotations": {"bold": True}, "href": None},
+                                {"plain_text": "📖", "annotations": {}, "href": "https://www.notion.so/3a30b31fce98801dbdf9d153cf7c2f34"},
+                            ],
+                            [{"plain_text": "Top", "annotations": {}, "href": None}],
+                        ]
+                    },
+                },
+            ]
+        }
+        md = blocks_to_md(blocks, fetch_children=lambda bid: children[bid], links=lm)
+        self.assertIn("[[jalon-agarre-v\\|📖]]", md)
+        pushed = md_to_blocks(md, links=lm)
+        row_cells = pushed[0]["table"]["children"][1]["table_row"]["cells"]
+        self.assertEqual(len(row_cells), 2)
+        self.assertEqual(row_cells[0][1]["text"]["content"], "📖")
+        self.assertEqual(row_cells[0][1]["text"]["link"]["url"], lm.url_for_name("jalon-agarre-v"))
+
+    def test_check_rejects_unescaped_table_wikilink_pipe_unless_closed(self):
+        import tempfile
+        from pathlib import Path
+        from bridge_sync import config, commands
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            (tmp_path / "scripts").mkdir()
+            note = tmp_path / "note.md"
+            note.write_text(
+                "---\nstatus: borrador\n---\n\n| Ej | Rol |\n| --- | --- |\n| [[slug|📖]] | Top |\n"
+            )
+            (tmp_path / "scripts" / "notion_pages.json").write_text(
+                '{\n  "note": {"id": "123", "path": "note.md"}\n}\n'
+            )
+            config.set_project_root(tmp_path)
+            with self.assertRaises(ValueError):
+                commands.check()
+
+            note.write_text(
+                "---\nstatus: cerrado\n---\n\n| Ej | Rol |\n| --- | --- |\n| [[slug|📖]] | Top |\n"
+            )
+            commands.check()
+
+            note.write_text(
+                "---\nstatus: borrador\n---\n\n| Ej | Rol |\n| --- | --- |\n| [[slug\\|📖]] | Top |\n"
+            )
+            commands.check()
+
     def test_link_map(self):
         pages = {"semana-01": {"id": "3a30b31fce98801dbdf9d153cf7c2f34", "path": "logs/semana-01.md"}}
         lm = LinkMap(pages)

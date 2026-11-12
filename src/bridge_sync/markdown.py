@@ -52,12 +52,18 @@ def rich_text_to_md(rich_text, links=None):
     return "".join(parts)
 
 
+_TABLE_CELL_PIPE_RE = re.compile(r"(?<!\\)\|")
+
+
 def rows_to_md(rows, links=None):
     """rows: the table_row blocks of a table, already fetched."""
     lines = []
     for i, row in enumerate(rows):
         cells = row["table_row"]["cells"]
-        cell_texts = [rich_text_to_md(c, links).replace("\n", "<br>") for c in cells]
+        cell_texts = [
+            _TABLE_CELL_PIPE_RE.sub(r"\\|", rich_text_to_md(c, links).replace("\n", "<br>"))
+            for c in cells
+        ]
         lines.append("| " + " | ".join(cell_texts) + " |")
         if i == 0:
             lines.append("| " + " | ".join(["---"] * len(cells)) + " |")
@@ -251,6 +257,18 @@ def _line_to_block(line, links=None, check_page_valid=None):
     return {"type": "paragraph", "paragraph": {"rich_text": md_inline_to_rich_text(line, links)}}
 
 
+_TABLE_SPLIT_RE = re.compile(r"(?<!\\)\|(?!(?:(?!\[\[).)*?\]\])")
+
+
+def _split_table_row(line):
+    raw = line.strip()
+    if raw.startswith("|"):
+        raw = raw[1:]
+    if raw.endswith("|"):
+        raw = raw[:-1]
+    return [c.strip().replace(r"\|", "|") for c in _TABLE_SPLIT_RE.split(raw)]
+
+
 def _is_separator_row(cells):
     return all(set(c.replace("-", "").replace(":", "").strip()) == set() for c in cells)
 
@@ -302,7 +320,7 @@ def md_to_blocks(text, links=None, check_page_valid=None):
         if line.startswith("|"):
             table_rows = []
             while i < n and lines[i].strip().startswith("|"):
-                cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+                cells = _split_table_row(lines[i])
                 if not _is_separator_row(cells):
                     table_rows.append(cells)
                 i += 1
